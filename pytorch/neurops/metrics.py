@@ -1,4 +1,5 @@
 import torch
+import math
 
 """
 Whole layer metrics
@@ -24,6 +25,16 @@ def effective_rank(tensor: torch.Tensor = None, threshold: float = 0.01,
     if partial:
         effdim = effdim.float() + torch.sum(S)
     return effdim
+
+
+"""
+Measure the average effictive rank of either the Weight or Activatoin matrix over squaroot of batchsize
+Method used by Maile et al. (2022) for selection of neurogenesis initialization candidates
+"""
+def NORTH_score(tensor: torch.Tensor = None, batchsize: int = 1, threshold: float = 0.01, 
+                 partial: bool = False, scale: bool = True, limit_ratio = -1):
+    return effective_rank(tensor/math.sqrt(batchsize), threshold, partial, scale, limit_ratio) / float(tensor.size()[0])
+
 
 """
 Measure orthogonality gap of activations. Score of 0 means completely orthogonal, score of 1 means completely redundant
