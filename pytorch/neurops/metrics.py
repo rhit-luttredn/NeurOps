@@ -32,7 +32,10 @@ Measure the average effictive rank of either the Weight or Activatoin matrix ove
 Method used by Maile et al. (2022) for selection of neurogenesis initialization candidates
 """
 def NORTH_score(tensor: torch.Tensor = None, batchsize: int = 1, threshold: float = 0.01, 
-                 partial: bool = False, scale: bool = True, limit_ratio = -1):
+                 partial: bool = False, scale: bool = True, limit_ratio = -1, conv: bool = False):
+    # For convolution, flatten to #input_channel x (the rest)
+    if conv:
+        tensor = torch.transpose(torch.transpose(tensor, 0, 1).reshape(tensor.shape[1], -1), 0, 1)
     return effective_rank(tensor/math.sqrt(batchsize), threshold, partial, scale, limit_ratio) / float(tensor.size()[0])
 
 
