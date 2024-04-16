@@ -10,7 +10,7 @@ from .initializations import *
 class ModLinear(nn.Linear):
     def __init__(self, in_features: int, out_features: int, bias: bool = True, masked: bool = False,
                  learnable_mask: bool = False, nonlinearity = 'relu', prebatchnorm: bool = False, 
-                 preflatten: bool = False):
+                 preflatten: bool = False, predropout: bool = False):
 
         super().__init__(in_features, out_features, bias)
 
@@ -36,6 +36,11 @@ class ModLinear(nn.Linear):
             self.preflatten = nn.Flatten(start_dim=1)
         else:
             self.preflatten = nn.Identity()
+
+        if predropout:
+            self.predropout = nn.Dropout(p=0.5)
+        else:
+            self.predropout = nn.Identity()
     
     def weight_parameters(self):
         if self.bias is not None:
@@ -79,6 +84,7 @@ class ModLinear(nn.Linear):
         if input is None:
             return 0, None
         input = self.preflatten(input)
+        input = self.predropout(input)
         FLOPs = 0
         if not isinstance(self.batchnorm, nn.Identity):
             if previous_mask is not None:
@@ -106,7 +112,7 @@ class ModLinear(nn.Linear):
 
     def forward(self, x: torch.Tensor, aux: torch.Tensor = None, old_x: torch.Tensor = None, 
                 previous: nn.Module = None):
-        out = nn.functional.linear(self.batchnorm(self.preflatten(x)), self.get_weights(),
+        out = nn.functional.linear(self.batchnorm(self.predropout(self.preflatten(x))), self.get_weights(),
                                                       self.get_biases())
         if aux is None:
             return self.nonlinearity(out)
